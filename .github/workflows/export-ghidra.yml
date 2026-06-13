@@ -22,7 +22,7 @@ jobs:
             type: decomp
 
     permissions:
-      contents: write
+      contents: read
 
     steps:
     - uses: actions/checkout@v4
