@@ -12,6 +12,7 @@
 #include "Rng.hpp"
 #include "SoundPlayer.hpp"
 #include "Stage.hpp"
+#include "ZunMemory.hpp"
 #include "i18n.hpp"
 #include "utils.hpp"
 #include <direct.h>
@@ -41,8 +42,7 @@ DIFFABLE_STATIC_ARRAY_ASSIGN(char *, 4, g_ShortCharacterList2) = {"ReimuA ", "Re
 
 #define DEFAULT_HIGH_SCORE_NAME "Nanashi "
 
-#pragma var_order(scoreData, bytesShifted, xorValue, checksum, bytes, remainingData, decryptedFilePointer, fileLen,    \
-                  scoreDatSize, scoreListNodeSize)
+#pragma var_order(scoreData, bytesShifted, xorValue, checksum, bytes, remainingData, decryptedFilePointer, fileLen)
 ScoreDat *ResultScreen::OpenScore(char *path)
 {
     u8 *bytes;
@@ -50,18 +50,15 @@ ScoreDat *ResultScreen::OpenScore(char *path)
     i32 fileLen;
     Th6k *decryptedFilePointer;
     i32 remainingData;
-    i32 scoreListNodeSize;
     u16 checksum;
     u8 xorValue;
-    i32 scoreDatSize;
     ScoreDat *scoreData;
 
     scoreData = (ScoreDat *)FileSystem::OpenPath(path, true);
     if (scoreData == NULL)
     {
     FAILED_TO_READ:
-        scoreDatSize = sizeof(ScoreDat);
-        scoreData = (ScoreDat *)malloc(scoreDatSize);
+        scoreData = (ScoreDat *)ZunAlloc(sizeof(ScoreDat));
         scoreData->dataOffset = sizeof(ScoreDat);
         scoreData->fileLen = sizeof(ScoreDat);
     }
@@ -117,8 +114,7 @@ ScoreDat *ResultScreen::OpenScore(char *path)
             goto FAILED_TO_READ;
         };
     }
-    scoreListNodeSize = sizeof(ScoreListNode);
-    scoreData->scores = (ScoreListNode *)malloc(scoreListNodeSize);
+    scoreData->scores = (ScoreListNode *)ZunAlloc(sizeof(ScoreListNode));
     scoreData->scores->next = NULL;
     scoreData->scores->data = NULL;
     scoreData->scores->prev = NULL;
@@ -185,12 +181,11 @@ u32 ResultScreen::GetHighScore(ScoreDat *scoreDat, ScoreListNode *node, u32 char
     return score;
 }
 
-#pragma var_order(scoresAmount, nextNode, scoreNodeSize)
+#pragma var_order(scoresAmount, nextNode)
 i32 ResultScreen::LinkScore(ScoreListNode *prevNode, Hscr *newScore)
 {
     i32 scoresAmount;
     ScoreListNode *nextNode;
-    i32 scoreNodeSize;
 
     scoresAmount = 0;
     while (prevNode->next != NULL)
@@ -203,9 +198,8 @@ i32 ResultScreen::LinkScore(ScoreListNode *prevNode, Hscr *newScore)
         scoresAmount++;
     }
     nextNode = prevNode->next;
-    scoreNodeSize = sizeof(ScoreListNode);
 
-    prevNode->next = (ScoreListNode *)malloc(scoreNodeSize);
+    prevNode->next = (ScoreListNode *)ZunAlloc(sizeof(ScoreListNode));
     prevNode->next->prev = prevNode;
     prevNode = prevNode->next;
     prevNode->data = newScore;
@@ -377,13 +371,12 @@ void ResultScreen::ReleaseScoreDat(ScoreDat *scoreDat)
 
 #pragma function("memcpy")
 #pragma var_order(difficulty, characterSlot, fileBuffer, sizeOfFile, currentCharacter, character, clrd, catk, pscr,    \
-                  stage, shotType, originalByte, remainingSize, xorValue, bytes, sd, fileBufferSize)
+                  stage, shotType, originalByte, remainingSize, xorValue, bytes, sd)
 void ResultScreen::WriteScore(ResultScreen *resultScreen)
 {
 
     u8 *fileBuffer;
     u8 originalByte;
-    i32 fileBufferSize;
     ScoreDat *sd;
     i32 characterSlot;
     u8 xorValue;
@@ -401,8 +394,7 @@ void ResultScreen::WriteScore(ResultScreen *resultScreen)
 
     sizeOfFile = 0;
 
-    fileBufferSize = SCORE_DAT_FILE_BUFFER_SIZE;
-    fileBuffer = (u8 *)malloc(fileBufferSize);
+    fileBuffer = (u8 *)ZunAlloc(SCORE_DAT_FILE_BUFFER_SIZE);
 
     memcpy(fileBuffer + sizeOfFile, resultScreen->scoreDat, sizeof(ScoreDat));
 
@@ -568,7 +560,7 @@ i32 ResultScreen::HandleResultKeyboard()
         }
 
         g_AnmManager->DrawStringFormat2(&this->unk_28a0[1], COLOR_RGB(COLOR_WHITE), COLOR_RGB(COLOR_BLACK),
-                                        g_CharacterList[this->charUsed * 2]);
+                                        g_CharacterList[this->charUsed * 2 + 1]);
         if (g_GameManager.shotType != SHOT_TYPE_B)
         {
             this->unk_28a0[1].color = COLOR_TRANSPARENT_WHITE;
@@ -1220,7 +1212,7 @@ u32 ResultScreen::DrawFinalStats()
         g_AsciiManager.color = color;
         unknownFloat = 0.0;
 
-        completion = g_GameManager.difficulty < 4 ? g_GameManager.counat / 39600.0f : g_GameManager.counat / 89500.0f;
+        completion = g_GameManager.difficulty < 4 ? g_GameManager.counat / 89500.0f : g_GameManager.counat / 39600.0f;
         strPos = viewport->pos;
         strPos.x += 224.0f;
         strPos.y += 32.0f;
